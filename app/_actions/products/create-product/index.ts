@@ -2,10 +2,7 @@
 
 import { db } from "@/app/_lib/prisma";
 import { revalidatePath } from "next/cache";
-import {
-  createProductSchema,
-  CreateProductSchema,
-} from "./create-product/schema";
+import { createProductSchema, CreateProductSchema } from "./schema";
 
 export async function CreateProduct(data: CreateProductSchema) {
   createProductSchema.parse(data);
