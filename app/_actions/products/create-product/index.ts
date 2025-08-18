@@ -2,12 +2,17 @@
 
 import { db } from "@/app/_lib/prisma";
 import { revalidatePath } from "next/cache";
-import { createProductSchema, CreateProductSchema } from "./schema";
+import { upsertProductSchema, UpsertProductSchema } from "./schema";
 
-export async function CreateProduct(data: CreateProductSchema) {
-  createProductSchema.parse(data);
-  await db.products.create({
-    data,
+export async function UpsertProduct(data: UpsertProductSchema) {
+  upsertProductSchema.parse(data);
+  await db.products.upsert({
+    where: {
+      id: data.id ?? "",
+    },
+    update: data,
+
+    create: data,
   });
 
   revalidatePath("/products"); //revalidatePath, recarrega/revalida toda a pagina da rota, atualizando todos os valores das funções

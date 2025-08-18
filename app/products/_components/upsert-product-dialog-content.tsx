@@ -22,44 +22,50 @@ import { Form } from "@/app/_components/ui/form";
 import { NumericFormat } from "react-number-format";
 import { useForm } from "react-hook-form";
 import {
-  createProductSchema,
-  CreateProductSchema,
+  upsertProductSchema,
+  UpsertProductSchema,
 } from "@/app/_actions/products/create-product/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CreateProduct } from "@/app/_actions/products/create-product";
+import { UpsertProduct } from "@/app/_actions/products/create-product";
 
 interface UpsertProductDialogProps {
+  defaltValues?: UpsertProductSchema;
   onSucess?: () => void;
 }
 
 const UpsertProductsDialogContent = ({
+  defaltValues,
   onSucess,
 }: UpsertProductDialogProps) => {
-  const form = useForm<CreateProductSchema>({
+  const form = useForm<UpsertProductSchema>({
     shouldUnregister: true,
-    resolver: zodResolver(createProductSchema),
-    defaultValues: {
+    resolver: zodResolver(upsertProductSchema),
+    defaultValues: defaltValues ?? {
       name: "",
       price: 0,
       stock: 1,
     },
   });
 
-  const onSubmit = async (data: CreateProductSchema) => {
+  const onSubmit = async (data: UpsertProductSchema) => {
     try {
-      await CreateProduct(data);
+      await UpsertProduct({ ...data, id: defaltValues?.id });
       onSucess?.();
     } catch (error) {
       console.log(error);
     }
   };
 
+  const isEditing = !!defaltValues;
+
   return (
     <DialogContent>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <DialogHeader>
-            <DialogTitle>Criar Produto</DialogTitle>
+            <DialogTitle>
+              {isEditing ? "Editar Produto" : "Criar Produto"}
+            </DialogTitle>
             <DialogDescription>Insira as informações abaixo</DialogDescription>
           </DialogHeader>
 
