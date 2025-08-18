@@ -3,7 +3,23 @@
 import { Badge } from "@/app/_components/ui/badge";
 import { Products } from "@/app/generated/prisma";
 import { ColumnDef } from "@tanstack/react-table";
-import { CircleIcon } from "lucide-react";
+import {
+  CircleIcon,
+  ClipboardCopyIcon,
+  EditIcon,
+  MoreHorizontalIcon,
+  Trash2Icon,
+} from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/app/_components/ui/dropdown-menu";
+import { Button } from "@/app/_components/ui/button";
 
 const getStatusLable = (status: string) => {
   if (status === "IN_STOCK") return "Em estoque";
@@ -41,6 +57,46 @@ export const productTablesColumns: ColumnDef<Products>[] = [
           />
           {lable}
         </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "action",
+    header: "Ações",
+    cell: (row) => {
+      const product = row.row.original;
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost">
+              <MoreHorizontalIcon size={4} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              className="gap-1.5"
+              onClick={() => {
+                navigator.clipboard.writeText(product.id);
+              }}
+            >
+              <ClipboardCopyIcon size={16} />
+              copiar ID
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="gap-1.5">
+              <EditIcon size={16} />
+              Editar
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="gap-1.5">
+              <Trash2Icon size={16} />
+              Editar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       );
     },
   },

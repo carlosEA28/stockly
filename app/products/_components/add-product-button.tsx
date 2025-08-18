@@ -30,6 +30,7 @@ import {
   CreateProductSchema,
   createProductSchema,
 } from "../../_actions/products/create-product/schema";
+import { CreateProduct } from "@/app/_actions/products";
 
 const AddProductButton = () => {
   const [dialogIsOpen, setDialogIsOpen] = useState(false);
