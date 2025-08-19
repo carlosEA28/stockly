@@ -7,57 +7,58 @@ import { revalidatePath } from "next/cache";
 export const createSale = async (data: CreateSaleSchema) => {
   createSaleSchema.parse(data);
 
-  const sale = await db.sale.create({
-    data: {
-      date: new Date(),
-    },
-  });
-
-  for (const product of data.product) {
-    const productFromDb = await db.products.findUnique({
-      where: { id: product.id },
-    });
-
-    if (!productFromDb) {
-      throw new Error("Product not found");
-    }
-
-    const productIsOutOfStock = product.quantity > productFromDb.stock;
-    if (productIsOutOfStock) {
-      throw new Error("Product out of stock");
-    }
-
-    await db.saleProduct.create({
+  await db.$transaction(async (trx) => {
+    const sale = await trx.sale.create({
       data: {
-        saleId: sale.id,
-        productId: product.id,
-        quantity: product.quantity,
-        unitPrice: productFromDb.price,
+        date: new Date(),
       },
     });
 
-    // Atualiza o estoque
-    await db.products.update({
-      where: { id: product.id },
-      data: {
-        stock: productFromDb.stock - product.quantity,
-      },
-    });
+    for (const product of data.product) {
+      const productFromDb = await trx.products.findUnique({
+        where: { id: product.id },
+      });
 
-    await db.products.update({
-      where: {
-        id: product.id,
-      },
+      if (!productFromDb) {
+        throw new Error("Product not found");
+      }
 
-      data: {
-        stock: {
-          decrement: product.quantity,
+      const productIsOutOfStock = product.quantity > productFromDb.stock;
+      if (productIsOutOfStock) {
+        throw new Error("Product out of stock");
+      }
+
+      await trx.saleProduct.create({
+        data: {
+          saleId: sale.id,
+          productId: product.id,
+          quantity: product.quantity,
+          unitPrice: productFromDb.price,
         },
-      },
-    });
+      });
 
-    revalidatePath("/products");
-  }
+      await trx.products.update({
+        where: { id: product.id },
+        data: {
+          stock: productFromDb.stock - product.quantity,
+        },
+      });
 
-  return sale;
+      await trx.products.update({
+        where: {
+          id: product.id,
+        },
+
+        data: {
+          stock: {
+            decrement: product.quantity,
+          },
+        },
+      });
+
+      revalidatePath("/products");
+    }
+
+    return sale;
+  });
 };
