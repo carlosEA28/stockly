@@ -13,6 +13,7 @@ import { Input } from "@/app/_components/ui/input";
 import {
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/app/_components/ui/sheet";
@@ -20,7 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { Button } from "@/app/_components/ui/button";
-import { PlusIcon } from "lucide-react";
+import { CheckIcon, PlusIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Products } from "@/app/generated/prisma";
 import {
@@ -35,6 +36,8 @@ import {
 } from "@/app/_components/ui/table";
 import { formatCurrency } from "@/app/_helpers/currency";
 import SalesTableDropdownMenu from "./table-dropdown-menu";
+import { createSale } from "@/app/_actions/sale/create-sale";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   productId: z.uuid({
@@ -51,6 +54,7 @@ type FormSchema = z.infer<typeof formSchema>;
 interface UpsertSheetContentProps {
   products: Products[];
   productsOptions: ComboboxOption[];
+  onSucess: () => void;
 }
 
 interface SelectedProducts {
@@ -63,6 +67,7 @@ interface SelectedProducts {
 const UpsertSheetContent = ({
   products,
   productsOptions,
+  onSucess,
 }: UpsertSheetContentProps) => {
   const [selectedProducts, setSelectedProducts] = useState<SelectedProducts[]>(
     [],
@@ -142,6 +147,23 @@ const UpsertSheetContent = ({
     setSelectedProducts((currentProducts) => {
       return currentProducts.filter((product) => product.id !== productId);
     });
+  };
+
+  const handleSubmitSaleClick = async () => {
+    try {
+      await createSale({
+        product: selectedProducts.map((product) => ({
+          id: product.id,
+          quantity: product.quantity,
+        })),
+      });
+
+      toast.success("Venda realizada com sucesso");
+      onSucess();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error ao realizar venda");
+    }
   };
 
   return (
@@ -234,6 +256,17 @@ const UpsertSheetContent = ({
           </TableRow>
         </TableFooter>
       </Table>
+
+      <SheetFooter className="pt-6">
+        <Button
+          className="w-full gap-2"
+          disabled={selectedProducts.length == 0}
+          onClick={handleSubmitSaleClick}
+        >
+          <CheckIcon size={20} />
+          Finalizar venda
+        </Button>
+      </SheetFooter>
     </SheetContent>
   );
 };
