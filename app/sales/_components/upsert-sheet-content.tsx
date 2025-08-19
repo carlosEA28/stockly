@@ -34,6 +34,7 @@ import {
   TableRow,
 } from "@/app/_components/ui/table";
 import { formatCurrency } from "@/app/_helpers/currency";
+import SalesTableDropdownMenu from "./table-dropdown-menu";
 
 const formSchema = z.object({
   productId: z.uuid({
@@ -119,6 +120,12 @@ const UpsertSheetContent = ({
     );
   }, [selectedProducts]);
 
+  const handlDelete = (productId: string) => {
+    setSelectedProducts((currentProducts) => {
+      return currentProducts.filter((product) => product.id !== productId);
+    });
+  };
+
   return (
     <SheetContent className="!max-w-[700px] p-6">
       <SheetHeader>
@@ -180,6 +187,7 @@ const UpsertSheetContent = ({
             <TableHead>Preço Unitário</TableHead>
             <TableHead>Quantidade</TableHead>
             <TableHead>Total</TableHead>
+            <TableHead>Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -191,12 +199,19 @@ const UpsertSheetContent = ({
               <TableCell>
                 {formatCurrency(product.price * product.quantity)}
               </TableCell>
+              <TableCell>
+                <SalesTableDropdownMenu
+                  product={product}
+                  onDelete={handlDelete}
+                />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
         <TableFooter>
           <TableRow>
             <TableCell colSpan={3}>Total</TableCell>
+            <TableCell></TableCell>
             <TableCell>{productsTotal}</TableCell>
           </TableRow>
         </TableFooter>
