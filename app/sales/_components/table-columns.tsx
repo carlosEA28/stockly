@@ -5,6 +5,7 @@ import { GetSalesDto } from "@/app/_data-access/sale/getSales";
 import { formatCurrency } from "@/app/_helpers/currency";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontalIcon } from "lucide-react";
+import SalesTableDropdownMenu from "./table-dropdown-menu";
 
 export const saleTableColumns: ColumnDef<GetSalesDto>[] = [
   {
@@ -33,10 +34,8 @@ export const saleTableColumns: ColumnDef<GetSalesDto>[] = [
   },
   {
     header: "Ações",
-    cell: () => (
-      <Button>
-        <MoreHorizontalIcon size={16} />
-      </Button>
+    cell: ({ row: { original: sale } }) => (
+      <SalesTableDropdownMenu sale={sale} />
     ),
   },
 ];

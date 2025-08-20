@@ -23,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/app/_components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface ProductDropdownMenuProps {
   row: Products;
@@ -30,6 +31,11 @@ interface ProductDropdownMenuProps {
 
 const ProductDropdownMenu = ({ row }: ProductDropdownMenuProps) => {
   const [editDialogIsOpen, setEditDialogIsOpen] = useState(false);
+
+  const handleCopyIdToClipboard = () => {
+    navigator.clipboard.writeText(row.id);
+    toast.success("ID copiado para a área de transferencia");
+  };
 
   return (
     <AlertDialog>
@@ -47,7 +53,7 @@ const ProductDropdownMenu = ({ row }: ProductDropdownMenuProps) => {
             <DropdownMenuItem
               className="gap-1.5"
               onClick={() => {
-                navigator.clipboard.writeText(row.id);
+                handleCopyIdToClipboard();
               }}
             >
               <ClipboardCopyIcon size={16} />
