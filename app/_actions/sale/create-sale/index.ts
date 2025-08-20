@@ -1,64 +1,60 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { db } from "@/app/_lib/prisma";
-import { createSaleSchema, CreateSaleSchema } from "./schems";
+import { createSaleSchema } from "./schems";
 import { revalidatePath } from "next/cache";
+import { actionClient } from "@/app/_lib/safeAction";
+import { returnValidationErrors } from "next-safe-action";
 
-export const createSale = async (data: CreateSaleSchema) => {
-  createSaleSchema.parse(data);
-
-  await db.$transaction(async (trx) => {
-    const sale = await trx.sale.create({
-      data: {
-        date: new Date(),
-      },
-    });
-
-    for (const product of data.product) {
-      const productFromDb = await trx.products.findUnique({
-        where: { id: product.id },
-      });
-
-      if (!productFromDb) {
-        throw new Error("Product not found");
-      }
-
-      const productIsOutOfStock = product.quantity > productFromDb.stock;
-      if (productIsOutOfStock) {
-        throw new Error("Product out of stock");
-      }
-
-      await trx.saleProduct.create({
+export const createSale = actionClient
+  .inputSchema(createSaleSchema)
+  .action(async ({ parsedInput: { product } }) => {
+    await db.$transaction(async (trx) => {
+      const sale = await trx.sale.create({
         data: {
-          saleId: sale.id,
-          productId: product.id,
-          quantity: product.quantity,
-          unitPrice: productFromDb.price,
+          date: new Date(),
         },
       });
 
-      await trx.products.update({
-        where: { id: product.id },
-        data: {
-          stock: productFromDb.stock - product.quantity,
-        },
-      });
+      for (const products of product) {
+        const productFromDb = await trx.products.findUnique({
+          where: { id: products.id },
+        });
 
-      await trx.products.update({
-        where: {
-          id: product.id,
-        },
+        if (!productFromDb) {
+          returnValidationErrors(createSaleSchema, {
+            _errors: ["Product not found"],
+          });
+        }
 
-        data: {
-          stock: {
-            decrement: product.quantity,
+        const productIsOutOfStock = products.quantity > productFromDb.stock;
+        if (productIsOutOfStock) {
+          returnValidationErrors(createSaleSchema, {
+            _errors: ["Product out of stock"],
+          });
+        }
+
+        await trx.saleProduct.create({
+          data: {
+            saleId: sale.id,
+            productId: products.id,
+            quantity: products.quantity,
+            unitPrice: productFromDb.price,
           },
-        },
-      });
+        });
+
+        // ✅ Atualiza estoque apenas 1x, usando decrement
+        await trx.products.update({
+          where: { id: products.id },
+          data: {
+            stock: {
+              decrement: products.quantity,
+            },
+          },
+        });
+      }
 
       revalidatePath("/products");
-    }
-
-    return sale;
+    });
   });
-};

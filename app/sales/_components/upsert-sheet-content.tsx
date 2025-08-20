@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import { Button } from "@/app/_components/ui/button";
 import { CheckIcon, PlusIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { Products } from "@/app/generated/prisma";
 import {
   Table,
@@ -38,6 +38,7 @@ import { formatCurrency } from "@/app/_helpers/currency";
 import SalesTableDropdownMenu from "./table-dropdown-menu";
 import { createSale } from "@/app/_actions/sale/create-sale";
 import { toast } from "sonner";
+import { useAction } from "next-safe-action/hooks";
 
 const formSchema = z.object({
   productId: z.uuid({
@@ -93,18 +94,6 @@ const UpsertSheetContent = ({
       );
 
       if (existingProducts) {
-        const productsIsOutOfStock =
-          existingProducts.quantity + data.quantity > selectedProduct.stock;
-
-        if (productsIsOutOfStock) {
-          form.setError("quantity", {
-            message: "Quantidade indisponível em estoque",
-          });
-
-          return currentProduct;
-        }
-        form.reset();
-
         return currentProduct.map((product) => {
           if (product.id === selectedProduct.id) {
             return {
@@ -116,12 +105,6 @@ const UpsertSheetContent = ({
         });
       }
 
-      const productsIsOutOfStock = data.quantity > selectedProduct.stock;
-      if (productsIsOutOfStock) {
-        form.setError("quantity", {
-          message: "Quantidade indisponível em estoque",
-        });
-      }
       form.reset();
 
       return [
@@ -143,6 +126,19 @@ const UpsertSheetContent = ({
     );
   }, [selectedProducts]);
 
+  const { execute: executeCreateSale } = useAction(createSale, {
+    onError: (error) => {
+      console.log(error);
+
+      toast.error("Erro ao realizar a venda");
+    },
+
+    onSuccess: () => {
+      toast.success("Venda realizada com sucesso");
+      onSucess();
+    },
+  });
+
   const handlDelete = (productId: string) => {
     setSelectedProducts((currentProducts) => {
       return currentProducts.filter((product) => product.id !== productId);
@@ -150,20 +146,12 @@ const UpsertSheetContent = ({
   };
 
   const handleSubmitSaleClick = async () => {
-    try {
-      await createSale({
-        product: selectedProducts.map((product) => ({
-          id: product.id,
-          quantity: product.quantity,
-        })),
-      });
-
-      toast.success("Venda realizada com sucesso");
-      onSucess();
-    } catch (error) {
-      console.error(error);
-      toast.error("Error ao realizar venda");
-    }
+    executeCreateSale({
+      product: selectedProducts.map((product) => ({
+        id: product.id,
+        quantity: product.quantity,
+      })),
+    });
   };
 
   return (
